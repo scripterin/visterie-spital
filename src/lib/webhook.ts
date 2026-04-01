@@ -22,36 +22,36 @@ export async function sendDiscordWebhook(payload: WebhookPayload) {
   const amountStr = `$${payload.amount.toLocaleString("ro-RO")}`;
   const userTag = payload.discordId ? `<@${payload.discordId}>` : payload.username;
 
-  const embed = {
-    title: `${statusIcon} ${typeTitle}`,
-    color,
-    fields: [
-      {
-        name: "Efectuat de",
-        value: userTag,
-        inline: true,
-      },
-      {
-        name: "Callsign",
-        value: payload.callsign,
-        inline: true,
-      },
-      {
-        name: "Sumă",
-        value: amountStr,
-        inline: true,
-      },
-      {
-        name: "Motiv",
-        value: payload.reason,
-        inline: false,
-      },
-    ],
-    footer: {
-      text: `Visterie System • ${payload.date}`,
+const embed = {
+  title: `${statusIcon} ${typeTitle}`,
+  color,
+  fields: [
+    {
+      name: "👤 Efectuat de",
+      value: userTag,
+      inline: false,
     },
-    timestamp: new Date().toISOString(),
-  };
+    {
+      name: "📻 Callsign",
+      value: payload.callsign,
+      inline: false,
+    },
+    {
+      name: "💰 Sumă",
+      value: amountStr,
+      inline: false,
+    },
+    {
+      name: "📝 Motiv",
+      value: payload.reason,
+      inline: false,
+    },
+  ],
+  footer: {
+    text: `Visterie System • ${payload.date}`,
+  },
+  timestamp: new Date().toISOString(),
+};
 
   try {
     await fetch(webhookUrl, {
