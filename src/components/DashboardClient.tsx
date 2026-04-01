@@ -19,11 +19,12 @@ interface Transaction {
   user?: { username: string | null; callsign: string | null };
 }
 
+const formatDate = (d: Date): string =>
+  `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
+
 export default function DashboardClient({ session }: { session: Session }) {
   const [treasury, setTreasury] = useState<number | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [amountRevealed, setAmountRevealed] = useState(false);
-  const [showRevealConfirm, setShowRevealConfirm] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showRemoveModal, setShowRemoveModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -32,7 +33,16 @@ export default function DashboardClient({ session }: { session: Session }) {
   const [deletingHistory, setDeletingHistory] = useState(false);
   const [ultimaDataBilant, setUltimaDataBilant] = useState<string | null>(null);
 
-  const isAdmin = session.user.rol === "admin"; // doar adminii pot folosi butonul
+  const isAdmin = session.user.rol === "admin";
+
+  useEffect(() => {
+    fetch("/api/bilant")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.lastDate) setUltimaDataBilant(formatDate(new Date(data.lastDate)));
+      })
+      .catch(() => {});
+  }, []);
 
   const fetchTreasury = useCallback(async () => {
     try {
@@ -40,7 +50,7 @@ export default function DashboardClient({ session }: { session: Session }) {
       const data = await res.json();
       setTreasury(data.totalAmount);
     } catch {
-      toast.error("Nu s-a putut încărca visteria");
+      toast.error("Nu s-a putut incarca visteria");
     } finally {
       setLoadingTreasury(false);
     }
@@ -52,7 +62,7 @@ export default function DashboardClient({ session }: { session: Session }) {
       const data = await res.json();
       setTransactions(Array.isArray(data) ? data : []);
     } catch {
-      toast.error("Nu s-au putut încărca tranzacțiile");
+      toast.error("Nu s-au putut incarca tranzactiile");
     } finally {
       setLoadingTransactions(false);
     }
@@ -75,56 +85,60 @@ export default function DashboardClient({ session }: { session: Session }) {
     try {
       const res = await fetch("/api/transactions", { method: "DELETE" });
       const data = await res.json();
-      if (!res.ok) { toast.error(data.error || "Eroare la ștergere"); return; }
-      toast.success("Istoricul a fost șters");
+      if (!res.ok) { toast.error(data.error || "Eroare la stergere"); return; }
+      toast.success("Istoricul a fost sters");
       setTransactions([]);
       setShowDeleteConfirm(false);
     } catch {
-      toast.error("Eroare de rețea");
+      toast.error("Eroare de retea");
     } finally {
       setDeletingHistory(false);
     }
   }
 
-  const formatDate = (d: Date) =>
-    `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
-
   const genereazaBilant = async () => {
     try {
       const res = await fetch("/api/bilant", { method: "POST" });
       const data = await res.json();
-
       if (data.error) throw new Error(data.error);
 
-      const lastDate = new Date(data.lastDate);
       const currentDate = new Date(data.currentDate);
+      const lastDate: Date | null = data.lastDate ? new Date(data.lastDate) : null;
+      const perioadaStart = lastDate ? formatDate(lastDate) : "inceput";
+      const perioadaSfarsit = formatDate(currentDate);
+      const lineSeparator = "=".repeat(50);
 
-      const text = `
-=== BILANT ${formatDate(lastDate)} - ${formatDate(currentDate)} ===
+      const text = [
+        lineSeparator,
+        `  BILANT FINANCIAR`,
+        `  Perioada: ${perioadaStart} - ${perioadaSfarsit}`,
+        lineSeparator,
+        "",
+        `  Total visterie:     $${data.totalVisterie.toLocaleString("ro-RO")}`,
+        "",
+        `  Bani adaugati:      $${data.baniBagati.toLocaleString("ro-RO")}`,
+        `  Bani scosi:         $${data.baniScosi.toLocaleString("ro-RO")}`,
+        "",
+        data.profit >= 0
+          ? `  Profit perioada:    $${data.profit.toLocaleString("ro-RO")}`
+          : `  Pierdere perioada:  $${Math.abs(data.profit).toLocaleString("ro-RO")}`,
+        "",
+        lineSeparator,
+        `  Generat la: ${perioadaSfarsit}`,
+        lineSeparator,
+      ].join("\n");
 
-Total visterie: ${data.totalVisterie.toLocaleString("ro-RO")}$
-
-Bani bagati: ${data.baniBagati.toLocaleString("ro-RO")}$ 
-Bani scosi: ${data.baniScosi.toLocaleString("ro-RO")}$
-
-${
-  data.profit > 0
-    ? `Profit fata de ultimul bilant: ${data.profit.toLocaleString("ro-RO")}$`
-    : `Nu exista profit.\nDiferenta: ${data.profit.toLocaleString("ro-RO")}$`
-}
-      `;
-
-      const blob = new Blob([text], { type: "text/plain" });
+      const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = `bilant-${formatDate(currentDate)}.txt`;
+      link.download = `bilant-${perioadaSfarsit.replace(/\./g, "-")}.txt`;
       link.click();
-
-      setUltimaDataBilant(formatDate(currentDate));
+      URL.revokeObjectURL(link.href);
+      setUltimaDataBilant(perioadaSfarsit);
       toast.success("Bilant generat cu succes!");
     } catch (err: unknown) {
-      console.error("Eroare la generarea bilanțului:", err);
-      toast.error("Eroare la generarea bilanțului");
+      console.error("Eroare la generarea bilantului:", err);
+      toast.error("Eroare la generarea bilantului");
     }
   };
 
@@ -132,272 +146,424 @@ ${
   const displayName = session.user.username ?? session.user.name ?? "Utilizator";
 
   return (
-    <div style={{ height: "100vh", overflow: "hidden", position: "relative" }}>
-      {/* Ambient glows */}
-      <div className="fixed top-0 right-0 w-[600px] h-[600px] pointer-events-none"
-        style={{ background: "radial-gradient(circle, rgba(99,102,241,0.07) 0%, transparent 70%)" }} />
-      <div className="fixed bottom-0 left-0 w-[400px] h-[400px] pointer-events-none"
-        style={{ background: "radial-gradient(circle, rgba(34,197,94,0.05) 0%, transparent 70%)" }} />
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=DM+Mono:wght@400;500&display=swap');
 
-      {/* ─── Buton Generează Bilant — vizibil doar admin ─── */}
-      {isAdmin && (
-        <div
-          className="fixed z-50 flex flex-col items-start gap-1"
-          style={{ top: "80px", left: "24px" }}
-        >
-          <button
-            onClick={genereazaBilant}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-white text-xs font-semibold transition-all duration-150 shadow-lg"
-            style={{
-              background: "rgba(249,115,22,0.9)",
-              border: "1px solid rgba(251,146,60,0.4)",
-              backdropFilter: "blur(8px)",
-              boxShadow: "0 4px 16px rgba(249,115,22,0.3)",
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = "rgba(234,88,12,0.95)";
-              e.currentTarget.style.boxShadow = "0 4px 20px rgba(234,88,12,0.45)";
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = "rgba(249,115,22,0.9)";
-              e.currentTarget.style.boxShadow = "0 4px 16px rgba(249,115,22,0.3)";
-            }}
-          >
-            <span>📄</span>
-            <span>Generează Bilant</span>
-          </button>
+        .db-root {
+          font-family: 'DM Sans', sans-serif;
+          height: 100vh;
+          overflow: hidden;
+          position: relative;
+        }
 
-          {ultimaDataBilant ? (
-            <p className="text-xs pl-1" style={{ color: "rgba(255,255,255,0.4)", letterSpacing: "0.03em" }}>
-              Ultima calculare: {ultimaDataBilant}
-            </p>
-          ) : (
-            <p className="text-xs pl-1" style={{ color: "rgba(255,255,255,0.25)", letterSpacing: "0.03em" }}>
-              Niciun bilanț generat
-            </p>
-          )}
-        </div>
-      )}
+        .bilant-card {
+          position: fixed;
+          top: 20px;
+          left: 20px;
+          z-index: 50;
+          background: rgba(12,12,15,0.82);
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 14px;
+          padding: 12px 15px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          min-width: 215px;
+          cursor: pointer;
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          transition: border-color 0.2s ease, transform 0.15s ease;
+          overflow: hidden;
+        }
+        .bilant-card:hover { border-color: rgba(234,130,50,0.32); transform: translateY(-1px); }
+        .bilant-card:hover .bilant-glow { opacity: 1; }
+        .bilant-card:active { transform: translateY(0); }
 
-      {/* Navbar */}
-      <nav style={{ height: "64px", background: "transparent", position: "relative", zIndex: 40 }}>
+        .bilant-glow {
+          position: absolute;
+          top: -40px; left: -40px;
+          width: 130px; height: 130px;
+          background: radial-gradient(circle, rgba(234,130,50,0.13) 0%, transparent 70%);
+          pointer-events: none;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        }
+
+        .bilant-icon {
+          width: 34px; height: 34px;
+          border-radius: 10px;
+          background: linear-gradient(135deg, #EA8232, #bf5a0e);
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0;
+          box-shadow: 0 3px 10px rgba(234,130,50,0.28);
+        }
+
+        .bilant-dl {
+          width: 24px; height: 24px;
+          border-radius: 7px;
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.07);
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0;
+        }
+
+        .db-nav {
+          height: 58px;
+          position: relative;
+          z-index: 40;
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          padding: 0 24px;
+          gap: 10px;
+        }
+
+        .nav-divider { width: 1px; height: 18px; background: rgba(255,255,255,0.07); }
+
+        .nav-signout {
+          width: 30px; height: 30px; border-radius: 9px;
+          display: flex; align-items: center; justify-content: center;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.07);
+          color: rgba(255,255,255,0.3); cursor: pointer;
+          transition: all 0.15s ease;
+        }
+        .nav-signout:hover {
+          background: rgba(239,68,68,0.09);
+          border-color: rgba(239,68,68,0.22);
+          color: #f87171;
+        }
+
+        .db-main {
+          position: relative; z-index: 10;
+          height: calc(100vh - 58px); overflow: hidden;
+          max-width: 820px; margin: 0 auto;
+          padding: 16px 14px 18px;
+          display: flex; flex-direction: column; gap: 12px;
+        }
+
+        .treasury-card {
+          flex-shrink: 0;
+          background: rgba(255,255,255,0.025);
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 20px;
+          padding: 26px 24px;
+          display: flex; flex-direction: column; align-items: center; gap: 10px;
+          position: relative; overflow: hidden;
+          backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+        }
+        .treasury-card::before {
+          content: '';
+          position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+          width: 55%; height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+        }
+
+        .treasury-label {
+          display: flex; align-items: center; gap: 7px;
+          font-size: 9.5px; font-weight: 500; letter-spacing: 0.2em;
+          text-transform: uppercase; color: rgba(255,255,255,0.28);
+        }
+
+        .treasury-amount {
+          font-family: 'DM Mono', monospace;
+          font-size: 40px; font-weight: 500; color: #fff;
+          letter-spacing: -0.02em;
+          filter: blur(12px); user-select: none;
+          transition: filter 0.35s ease; cursor: default;
+        }
+        .treasury-amount:hover { filter: blur(0px); }
+
+        .action-grid {
+          display: grid; grid-template-columns: 1fr 1fr;
+          gap: 10px; flex-shrink: 0;
+        }
+
+        .action-btn {
+          display: flex; align-items: center; justify-content: center; gap: 8px;
+          height: 54px; border-radius: 16px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13.5px; font-weight: 500; cursor: pointer;
+          border: 1px solid transparent;
+          transition: all 0.18s ease; letter-spacing: 0.01em;
+        }
+        .action-btn:active { transform: scale(0.98); }
+
+        .btn-add {
+          background: rgba(34,197,94,0.09); border-color: rgba(34,197,94,0.18); color: #4ade80;
+        }
+        .btn-add:hover {
+          background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.3);
+          transform: translateY(-1px); box-shadow: 0 6px 20px rgba(34,197,94,0.08);
+        }
+
+        .btn-remove {
+          background: rgba(239,68,68,0.07); border-color: rgba(239,68,68,0.16); color: #f87171;
+        }
+        .btn-remove:hover {
+          background: rgba(239,68,68,0.13); border-color: rgba(239,68,68,0.28);
+          transform: translateY(-1px); box-shadow: 0 6px 20px rgba(239,68,68,0.08);
+        }
+
+        .tx-panel {
+          flex: 1; min-height: 0;
+          background: rgba(255,255,255,0.02);
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 20px;
+          display: flex; flex-direction: column; overflow: hidden;
+          backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+        }
+
+        .tx-header {
+          padding: 16px 18px 13px;
+          display: flex; align-items: center; justify-content: space-between;
+          flex-shrink: 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .tx-title { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.85); }
+        .tx-count { font-size: 10.5px; color: rgba(255,255,255,0.22); margin-top: 2px; }
+        .tx-actions { display: flex; align-items: center; gap: 6px; }
+
+        .tx-icon-btn {
+          width: 28px; height: 28px; border-radius: 8px;
+          display: flex; align-items: center; justify-content: center;
+          background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+          cursor: pointer; color: rgba(255,255,255,0.28); transition: all 0.15s ease;
+        }
+        .tx-icon-btn:hover {
+          background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.65);
+          border-color: rgba(255,255,255,0.12);
+        }
+
+        .tx-delete-btn {
+          display: flex; align-items: center; gap: 5px;
+          font-size: 11px; font-weight: 500; padding: 5px 10px;
+          border-radius: 8px; cursor: pointer;
+          color: rgba(239,68,68,0.65); background: rgba(239,68,68,0.05);
+          border: 1px solid rgba(239,68,68,0.1); transition: all 0.15s ease;
+          font-family: 'DM Sans', sans-serif;
+        }
+        .tx-delete-btn:hover {
+          color: #f87171; background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.22);
+        }
+
+        .tx-list {
+          flex: 1; overflow-y: auto; padding: 10px 12px;
+          display: flex; flex-direction: column; gap: 5px;
+        }
+        .tx-list::-webkit-scrollbar { width: 2px; }
+        .tx-list::-webkit-scrollbar-track { background: transparent; }
+        .tx-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 99px; }
+
+        .tx-empty {
+          flex: 1; display: flex; flex-direction: column;
+          align-items: center; justify-content: center; gap: 6px; padding: 40px;
+        }
+        .tx-empty-icon {
+          width: 40px; height: 40px; border-radius: 12px;
+          background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+          display: flex; align-items: center; justify-content: center; margin-bottom: 4px;
+        }
+
+        .skeleton-pulse {
+          background: linear-gradient(90deg,
+            rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.03) 100%);
+          background-size: 200% 100%;
+          animation: shimmer 1.8s ease-in-out infinite;
+          border-radius: 12px;
+        }
+        @keyframes shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
+
+      <div className="db-root">
         <div style={{
-          width: "100%", padding: "0 32px", height: "100%",
-          display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "8px",
-        }}>
-          {isAdmin && (
-            <div style={{
-              fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em",
-              color: "#818cf8", background: "rgba(99,102,241,0.12)",
-              border: "1px solid rgba(99,102,241,0.25)", borderRadius: "8px", padding: "4px 10px",
-            }}>ADMIN</div>
-          )}
+          position: "fixed", top: 0, right: 0, width: 500, height: 500, pointerEvents: "none",
+          background: "radial-gradient(circle, rgba(99,102,241,0.05) 0%, transparent 65%)",
+        }} />
+        <div style={{
+          position: "fixed", bottom: 0, left: 0, width: 350, height: 350, pointerEvents: "none",
+          background: "radial-gradient(circle, rgba(34,197,94,0.04) 0%, transparent 65%)",
+        }} />
 
+        <button className="bilant-card" onClick={genereazaBilant}>
+          <div className="bilant-glow" />
+          <div className="bilant-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="8" y1="13" x2="16" y2="13"/>
+              <line x1="8" y1="17" x2="12" y2="17"/>
+            </svg>
+          </div>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 3 }}>
+            <span style={{ fontSize: 12, fontWeight: 500, color: "#fff", letterSpacing: "0.01em" }}>
+              Genereaza bilant
+            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#4ade80", flexShrink: 0 }} />
+              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.28)" }}>
+                {ultimaDataBilant ? `Ultima: ${ultimaDataBilant}` : "Niciun bilant generat"}
+              </span>
+            </div>
+          </div>
+          <div className="bilant-dl">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.32)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+          </div>
+        </button>
+
+        <nav className="db-nav">
           {avatarUrl ? (
-            <Image src={avatarUrl} alt="Avatar" width={34} height={34}
-              style={{ borderRadius: "50%", border: "2px solid rgba(255,255,255,0.1)" }} />
+            <Image src={avatarUrl} alt="Avatar" width={30} height={30}
+              style={{ borderRadius: "50%", border: "1.5px solid rgba(255,255,255,0.1)" }} />
           ) : (
             <div style={{
-              width: 34, height: 34, borderRadius: "50%",
-              background: "rgba(99,102,241,0.25)",
+              width: 30, height: 30, borderRadius: "50%",
+              background: "rgba(99,102,241,0.18)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: "13px", fontWeight: 700, color: "#a5b4fc",
+              fontSize: 11, fontWeight: 600, color: "#a5b4fc",
             }}>
               {displayName[0]?.toUpperCase()}
             </div>
           )}
-
           <div>
-            <div style={{ fontSize: "13px", fontWeight: 600, color: "#fff", lineHeight: 1 }}>{displayName}</div>
+            <div style={{ fontSize: 12.5, fontWeight: 500, color: "rgba(255,255,255,0.82)", lineHeight: 1 }}>
+              {displayName}
+            </div>
             {session.user.callsign && (
-              <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)", marginTop: "3px", lineHeight: 1 }}>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.24)", marginTop: 3, lineHeight: 1 }}>
                 {session.user.callsign}
               </div>
             )}
           </div>
-
-          <div style={{ width: "1px", height: "24px", background: "rgba(255,255,255,0.08)", margin: "0 4px" }} />
-
-          <button
-            onClick={() => signOut({ callbackUrl: "/" })}
-            title="Deconectare"
-            style={{
-              width: "34px", height: "34px", borderRadius: "10px",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-              color: "rgba(255,255,255,0.4)", cursor: "pointer", transition: "all 0.15s ease",
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = "rgba(239,68,68,0.1)";
-              e.currentTarget.style.borderColor = "rgba(239,68,68,0.3)";
-              e.currentTarget.style.color = "#ef4444";
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-              e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
-              e.currentTarget.style.color = "rgba(255,255,255,0.4)";
-            }}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <polyline points="16 17 21 12 16 7" />
-              <line x1="21" y1="12" x2="9" y2="12" />
+          <div className="nav-divider" />
+          <button className="nav-signout" onClick={() => signOut({ callbackUrl: "/" })} title="Deconectare">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
             </svg>
           </button>
-        </div>
-      </nav>
+        </nav>
 
-      {/* Main */}
-      <main style={{
-        position: "relative", zIndex: 10, height: "calc(100vh - 64px)",
-        overflow: "hidden", maxWidth: "860px", margin: "0 auto", padding: "24px 16px",
-        display: "flex", flexDirection: "column", gap: "20px",
-      }}>
-
-        {/* Treasury Card */}
-        <div className="glass p-6 select-none" style={{ flexShrink: 0 }}>
-          <div className="flex items-start justify-between mb-5">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "var(--muted)" }}>
-                Total Visterie
-              </p>
-              <p className="text-xs" style={{ color: "var(--muted)", opacity: 0.6 }}>
-                {amountRevealed ? "Click pe sumă pentru a ascunde" : "Click pe sumă pentru a afișa"}
-              </p>
-            </div>
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl"
-              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              🏦
-            </div>
-          </div>
-
-          {loadingTreasury ? (
-            <div className="skeleton h-14 w-56 rounded-xl" />
-          ) : (
-            <div className="cursor-pointer inline-block" onClick={() => {
-              if (!amountRevealed) setShowRevealConfirm(true);
-              else setAmountRevealed(false);
-            }}>
-              <span className="font-black text-5xl tracking-tight text-white transition-all duration-300"
-                style={{ filter: amountRevealed ? "blur(0px)" : "blur(10px)", userSelect: "none" }}>
-                ${(treasury ?? 0).toLocaleString("ro-RO")}
-              </span>
-            </div>
-          )}
-
-          {!amountRevealed && (
-            <p className="text-xs mt-3 flex items-center gap-1.5" style={{ color: "var(--muted)" }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                <circle cx="12" cy="12" r="3" />
+        <main className="db-main">
+          <div className="treasury-card">
+            <div className="treasury-label">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="22" x2="21" y2="22"/>
+                <line x1="6" y1="18" x2="6" y2="11"/>
+                <line x1="10" y1="18" x2="10" y2="11"/>
+                <line x1="14" y1="18" x2="14" y2="11"/>
+                <line x1="18" y1="18" x2="18" y2="11"/>
+                <polygon points="12 2 2 7 22 7"/>
               </svg>
-              Apasă pentru a vedea suma
-            </p>
-          )}
-        </div>
-
-        {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-4" style={{ flexShrink: 0 }}>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="btn-green flex items-center justify-center gap-2 text-base"
-            style={{ minHeight: "72px" }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            Adaugă Bani
-          </button>
-          <button
-            onClick={() => setShowRemoveModal(true)}
-            className="btn-red flex items-center justify-center gap-2 text-base"
-            style={{ minHeight: "72px" }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            Scoate Bani
-          </button>
-        </div>
-
-        {/* Transactions */}
-        <div className="glass p-6" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-          <div className="flex items-center justify-between mb-5" style={{ flexShrink: 0 }}>
-            <div>
-              <h2 className="font-bold text-white text-lg">Istoric Tranzacții</h2>
-              <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>{transactions.length} tranzacții</p>
+              Total Visterie
             </div>
-            <div className="flex items-center gap-2">
-              {isAdmin && transactions.length > 0 && (
-                <button
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="flex items-center gap-1.5 text-xs font-medium py-1.5 px-3 rounded-lg transition-all"
-                  style={{ color: "var(--red)", border: "1px solid rgba(239,68,68,0.2)", background: "rgba(239,68,68,0.06)" }}
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="3 6 5 6 21 6" />
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-                  </svg>
-                  Șterge tot
-                </button>
-              )}
-              <button
-                onClick={refreshData}
-                title="Reîncarcă"
-                className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
-                style={{ color: "var(--muted)", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
-                onMouseEnter={e => { e.currentTarget.style.color = "#fff"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)"; }}
-                onMouseLeave={e => { e.currentTarget.style.color = "var(--muted)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="23 4 23 10 17 10" />
-                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-                </svg>
-              </button>
-            </div>
+            {loadingTreasury ? (
+              <div className="skeleton-pulse" style={{ height: 48, width: 240 }} />
+            ) : (
+              <div className="treasury-amount">
+                ${(treasury ?? 0).toLocaleString("ro-RO")}
+              </div>
+            )}
           </div>
 
-          <hr style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.06)", marginBottom: "16px", flexShrink: 0 }} />
+          <div className="action-grid">
+            <button className="action-btn btn-add" onClick={() => setShowAddModal(true)}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Adauga Bani
+            </button>
+            <button className="action-btn btn-remove" onClick={() => setShowRemoveModal(true)}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Scoate Bani
+            </button>
+          </div>
 
-          {loadingTransactions ? (
-            <div className="flex flex-col gap-3">
-              {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-20 rounded-xl" />)}
-            </div>
-          ) : transactions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center" style={{ flex: 1 }}>
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl mb-4"
-                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                📋
+          <div className="tx-panel">
+            <div className="tx-header">
+              <div>
+                <div className="tx-title">Istoric Tranzactii</div>
+                <div className="tx-count">{transactions.length} tranzactii</div>
               </div>
-              <p className="font-medium text-white">Nicio tranzacție</p>
-              <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>Adaugă prima tranzacție folosind butoanele de mai sus.</p>
+              <div className="tx-actions">
+                {isAdmin && transactions.length > 0 && (
+                  <button className="tx-delete-btn" onClick={() => setShowDeleteConfirm(true)}>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <polyline points="3 6 5 6 21 6"/>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                    </svg>
+                    Sterge tot
+                  </button>
+                )}
+                <button className="tx-icon-btn" onClick={refreshData} title="Reincarca">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <polyline points="23 4 23 10 17 10"/>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                  </svg>
+                </button>
+              </div>
             </div>
-          ) : (
-            <div className="tx-scroll flex flex-col gap-3" style={{ flex: 1, overflowY: "auto", paddingRight: "4px" }}>
-              {transactions.map((tx) => <TransactionCard key={tx.id} tx={tx} />)}
-            </div>
-          )}
-        </div>
-      </main>
 
-      {/* Modals */}
-      {showRevealConfirm && (
-        <ConfirmModal
-          title="Afișează suma?" message="Vrei să afișezi suma totală din visterie?"
-          confirmLabel="Da, afișează" confirmColor="#6366f1"
-          onConfirm={() => { setAmountRevealed(true); setShowRevealConfirm(false); }}
-          onCancel={() => setShowRevealConfirm(false)}
-        />
-      )}
-      {showAddModal && <TransactionModal type="add" onClose={() => setShowAddModal(false)} onSuccess={refreshData} />}
-      {showRemoveModal && <TransactionModal type="remove" onClose={() => setShowRemoveModal(false)} onSuccess={refreshData} />}
-      {showDeleteConfirm && (
-        <ConfirmModal
-          title="Ștergi tot istoricul?" message="Această acțiune este ireversibilă. Toate tranzacțiile vor fi șterse permanent."
-          confirmLabel="Șterge tot" confirmColor="#ef4444"
-          onConfirm={handleDeleteHistory} onCancel={() => setShowDeleteConfirm(false)} loading={deletingHistory}
-        />
-      )}
-    </div>
+            {loadingTransactions ? (
+              <div style={{ padding: "10px 12px", display: "flex", flexDirection: "column", gap: 5 }}>
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="skeleton-pulse" style={{ height: 60 }} />
+                ))}
+              </div>
+            ) : transactions.length === 0 ? (
+              <div className="tx-empty">
+                <div className="tx-empty-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1.6" strokeLinecap="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="8" y1="13" x2="16" y2="13"/>
+                    <line x1="8" y1="17" x2="12" y2="17"/>
+                  </svg>
+                </div>
+                <p style={{ fontSize: 12.5, fontWeight: 500, color: "rgba(255,255,255,0.4)", margin: 0 }}>
+                  Nicio tranzactie
+                </p>
+                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.18)", margin: 0, textAlign: "center" }}>
+                  Adauga prima tranzactie folosind butoanele de mai sus.
+                </p>
+              </div>
+            ) : (
+              <div className="tx-list">
+                {transactions.map((tx) => <TransactionCard key={tx.id} tx={tx} />)}
+              </div>
+            )}
+          </div>
+        </main>
+
+        {showAddModal && (
+          <TransactionModal type="add" onClose={() => setShowAddModal(false)} onSuccess={refreshData} />
+        )}
+        {showRemoveModal && (
+          <TransactionModal type="remove" onClose={() => setShowRemoveModal(false)} onSuccess={refreshData} />
+        )}
+        {showDeleteConfirm && (
+          <ConfirmModal
+            title="Stergi tot istoricul?"
+            message="Aceasta actiune este ireversibila. Toate tranzactiile vor fi sterse permanent."
+            confirmLabel="Sterge tot"
+            confirmColor="#ef4444"
+            onConfirm={handleDeleteHistory}
+            onCancel={() => setShowDeleteConfirm(false)}
+            loading={deletingHistory}
+          />
+        )}
+      </div>
+    </>
   );
 }

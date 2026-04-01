@@ -13,56 +13,86 @@ interface Transaction {
 export default function TransactionCard({ tx }: { tx: Transaction }) {
   const isAdd = tx.type === "add";
   const date = new Date(tx.date);
+  
   const formattedDate = date.toLocaleDateString("ro-RO", {
-    year: "numeric", month: "2-digit", day: "2-digit",
+    day: "2-digit", month: "2-digit",
   });
   const formattedTime = date.toLocaleTimeString("ro-RO", {
     hour: "2-digit", minute: "2-digit",
   });
 
+  const colorHex = isAdd ? "#4ade80" : "#f87171";
+
   return (
-    <div className={`glass p-4 ${isAdd ? "tx-add" : "tx-remove"}`}>
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-3 min-w-0">
-          {/* Badge */}
-          <div
-            className="flex-shrink-0 mt-0.5 px-2.5 py-0.5 rounded-lg text-xs font-bold uppercase tracking-wider"
-            style={
-              isAdd
-                ? { background: "rgba(34,197,94,0.12)", color: "var(--green)", border: "1px solid rgba(34,197,94,0.2)" }
-                : { background: "rgba(239,68,68,0.12)", color: "var(--red)", border: "1px solid rgba(239,68,68,0.2)" }
-            }
+    <div className="group relative bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 hover:border-white/10 rounded-2xl p-3.5 transition-all duration-200">
+      <div className="flex items-center justify-between gap-4">
+        
+        {/* Partea Stângă: Icon + Detalii */}
+        <div className="flex items-center gap-3.5 min-w-0">
+          {/* Indicator Tip Tranzacție */}
+          <div 
+            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border"
+            style={{ 
+              backgroundColor: isAdd ? "rgba(34,197,94,0.08)" : "rgba(239,68,68,0.06)", 
+              borderColor: isAdd ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)",
+              color: colorHex 
+            }}
           >
-            {isAdd ? "ADĂUGARE" : "SCOATERE"}
+            {isAdd ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M5 12h14"/></svg>
+            )}
           </div>
 
-          <div className="min-w-0 flex-1">
-            <p className="text-sm text-white mb-1.5 truncate">{tx.reason}</p>
-            <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs" style={{ color: "var(--muted)" }}>
-              <span>
-                Callsign:{" "}
-                <span className="font-semibold text-white">{tx.callsign}</span>
-              </span>
-              {tx.user?.username && (
-                <span>
-                  Efectuat de:{" "}
-                  <span style={{ color: "rgba(255,255,255,0.6)" }}>{tx.user.username}</span>
+          <div className="min-w-0">
+            <h4 className="text-[13.5px] font-medium text-white/90 truncate leading-snug">
+              {tx.reason}
+            </h4>
+            <div className="flex items-center gap-2.5 mt-1">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-bold text-white/20 uppercase tracking-tight">Callsign:</span>
+                <span className="text-[11px] font-bold text-[#EA8232] tracking-tighter">
+                  {tx.callsign.startsWith('M-') ? tx.callsign : `M-${tx.callsign}`}
                 </span>
-              )}
+              </div>
+              
+              <div className="w-1 h-1 rounded-full bg-white/10" />
+
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-bold text-white/20 uppercase tracking-tight">Conducere:</span>
+                <span className="text-[11px] font-medium text-white/40">
+                   {tx.user?.callsign ?? tx.user?.username ?? "Sistem"}
+                </span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="flex-shrink-0 text-right">
-          <p className="font-black text-lg tracking-tight"
-            style={{ color: isAdd ? "var(--green)" : "var(--red)" }}>
+        {/* Partea Dreaptă: Sumă + Dată */}
+        <div className="text-right shrink-0">
+          <div 
+            className="font-mono text-[16px] font-bold tracking-tight"
+            style={{ color: colorHex }}
+          >
             {isAdd ? "+" : "-"}${tx.amount.toLocaleString("ro-RO")}
-          </p>
-          <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
-            {formattedDate} {formattedTime}
-          </p>
+          </div>
+          <div className="flex items-center justify-end gap-1.5 mt-1">
+            <span className="text-[10px] font-medium text-white/20">{formattedDate}</span>
+            <span className="text-[10px] font-bold text-white/10">•</span>
+            <span className="text-[10px] font-medium text-white/20">{formattedTime}</span>
+          </div>
         </div>
+
       </div>
+
+      {/* Glow discret la hover (opțional) */}
+      <div 
+        className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+        style={{ 
+          background: `radial-gradient(circle at center, ${colorHex}05 0%, transparent 70%)` 
+        }} 
+      />
     </div>
   );
 }

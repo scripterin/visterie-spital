@@ -7,10 +7,12 @@ export async function POST(req: NextRequest) {
       orderBy: { date: "desc" },
     });
 
-    const lastDate = lastBilant?.date ?? new Date(0); // dacă nu există, luăm epoch
+    // Data de start: ultima generare sau null dacă e primul bilanț
+    const lastDate: Date | null = lastBilant?.date ?? null;
 
+    // Filtrăm tranzacțiile doar din intervalul (lastDate, acum]
     const transactions = await prisma.transaction.findMany({
-      where: { date: { gt: lastDate } },
+      where: lastDate ? { date: { gt: lastDate } } : undefined,
     });
 
     let baniBagati = 0;
@@ -27,7 +29,8 @@ export async function POST(req: NextRequest) {
     const profit = baniBagati - baniScosi;
 
     const currentDate = new Date();
-    const bilant = await prisma.bilant.create({
+
+    await prisma.bilant.create({
       data: {
         baniBagati,
         baniScosi,
@@ -38,9 +41,8 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({
-      bilant,
-      lastDate,
-      currentDate,
+      lastDate: lastDate ? lastDate.toISOString() : null, // null = primul bilanț
+      currentDate: currentDate.toISOString(),
       baniBagati,
       baniScosi,
       totalVisterie,
@@ -48,6 +50,22 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     console.error(err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+// Returnează data ultimului bilanț generat (pentru inițializarea clientului)
+export async function GET() {
+  try {
+    const lastBilant = await prisma.bilant.findFirst({
+      orderBy: { date: "desc" },
+      select: { date: true },
+    });
+
+    return NextResponse.json({
+      lastDate: lastBilant?.date.toISOString() ?? null,
+    });
+  } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

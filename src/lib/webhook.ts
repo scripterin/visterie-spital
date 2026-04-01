@@ -16,31 +16,33 @@ export async function sendDiscordWebhook(payload: WebhookPayload) {
   }
 
   const isAdd = payload.type === "add";
-  const color = isAdd ? 0x00e5a0 : 0xff4d6d;
-  const title = isAdd ? "💰 Adăugare în visterie" : "💸 Retragere din visterie";
-  const amountStr = `$${payload.amount.toLocaleString()}`;
-  const mention = payload.discordId ? `<@${payload.discordId}>` : payload.username;
+  // Folosim pătrate colorate pentru un aspect mai robust
+  const statusIcon = isAdd ? "🟢" : "🔴"; 
+  const typeTitle = isAdd ? "ADĂUGARE VISTERIE" : "RETRAGERE VISTERIE";
+  const amountStr = `$${payload.amount.toLocaleString("ro-RO")}`;
+  const userTag = payload.discordId ? `<@${payload.discordId}>` : payload.username;
 
-  const embed = {
-    title,
-    color,
-    fields: [
-      { name: "Efectuat de", value: mention, inline: false },
-      { name: "Callsign", value: payload.callsign, inline: false },
-      { name: "Sumă", value: amountStr, inline: false },
-      { name: "Motiv", value: payload.reason, inline: false },
-      { name: "Data", value: payload.date, inline: false },
-    ],
-    footer: { text: "Visterie System" },
-    timestamp: new Date().toISOString(),
-  };
+  // Construim mesajul folosind separatoare de tip bară grea (▬)
+  // Acest design este 100% text normal, deci totul este indexat perfect de Search
+  const message = [
+    `**▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬**`,
+    `${statusIcon} **${typeTitle}**`,
+    `**▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬**`,
+    `> **EFECTUAT DE:** ${userTag}`,
+    `> **CALLSIGN:** ${payload.callsign}`,
+    `> **SUMĂ:** ${amountStr}`,
+    `> **MOTIV:** ${payload.reason}`,
+    `> **DATA:** ${payload.date}`,
+  ].join("\n");
 
   try {
     await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        embeds: [embed],
+        content: message,
+        // Permitem mențiunile pentru ca @user să apară albastru și să fie clickabil
+        allowed_mentions: { parse: ["users"] } 
       }),
     });
   } catch (err) {

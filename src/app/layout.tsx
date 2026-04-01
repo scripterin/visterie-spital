@@ -27,6 +27,14 @@ export default function RootLayout({
         {children}
         <Toaster
           position="top-right"
+          // --- ADAUGĂ ACEST CONTAINER STYLE ---
+          containerStyle={{
+            top: 80, // Schimbă valoarea asta (ex: 100) dacă vrei și mai jos
+            right: 24,
+            bottom: 24,
+            left: 24,
+          }}
+          // -------------------------------------
           toastOptions={{
             style: {
               background: "rgba(15,15,20,0.9)",
@@ -36,6 +44,7 @@ export default function RootLayout({
               fontFamily: "'Inter', sans-serif",
               backdropFilter: "blur(20px)",
               fontSize: "14px",
+              padding: "12px 16px", // Am adăugat puțin padding pentru aspect
             },
             success: {
               iconTheme: { primary: "#22c55e", secondary: "#0a0a0a" },
