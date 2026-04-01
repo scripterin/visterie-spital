@@ -16,33 +16,50 @@ export async function sendDiscordWebhook(payload: WebhookPayload) {
   }
 
   const isAdd = payload.type === "add";
-  // Folosim pătrate colorate pentru un aspect mai robust
-  const statusIcon = isAdd ? "🟢" : "🔴"; 
-  const typeTitle = isAdd ? "ADĂUGARE VISTERIE" : "RETRAGERE VISTERIE";
+  const color = isAdd ? 0x57f287 : 0xed4245; // Verde / Roșu
+  const statusIcon = isAdd ? "🟢" : "🔴";
+  const typeTitle = isAdd ? "Adăugare în Visterie" : "Retragere din Visterie";
   const amountStr = `$${payload.amount.toLocaleString("ro-RO")}`;
   const userTag = payload.discordId ? `<@${payload.discordId}>` : payload.username;
 
-  // Construim mesajul folosind separatoare de tip bară grea (▬)
-  // Acest design este 100% text normal, deci totul este indexat perfect de Search
-  const message = [
-    `**▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬**`,
-    `${statusIcon} **${typeTitle}**`,
-    `**▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬**`,
-    `> **EFECTUAT DE:** ${userTag}`,
-    `> **CALLSIGN:** ${payload.callsign}`,
-    `> **SUMĂ:** ${amountStr}`,
-    `> **MOTIV:** ${payload.reason}`,
-    `> **DATA:** ${payload.date}`,
-  ].join("\n");
+  const embed = {
+    title: `${statusIcon} ${typeTitle}`,
+    color,
+    fields: [
+      {
+        name: "Efectuat de",
+        value: userTag,
+        inline: true,
+      },
+      {
+        name: "Callsign",
+        value: payload.callsign,
+        inline: true,
+      },
+      {
+        name: "Sumă",
+        value: amountStr,
+        inline: true,
+      },
+      {
+        name: "Motiv",
+        value: payload.reason,
+        inline: false,
+      },
+    ],
+    footer: {
+      text: `Visterie System • ${payload.date}`,
+    },
+    timestamp: new Date().toISOString(),
+  };
 
   try {
     await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        content: message,
-        // Permitem mențiunile pentru ca @user să apară albastru și să fie clickabil
-        allowed_mentions: { parse: ["users"] } 
+        embeds: [embed],
+        allowed_mentions: { parse: ["users"] },
       }),
     });
   } catch (err) {
