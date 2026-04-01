@@ -27,22 +27,22 @@ const embed = {
   color,
   fields: [
     {
-      name: "👤 Efectuat de",
+      name: "Efectuat de",
       value: userTag,
       inline: false,
     },
     {
-      name: "📻 Callsign",
+      name: "Callsign",
       value: payload.callsign,
       inline: false,
     },
     {
-      name: "💰 Sumă",
+      name: "Sumă",
       value: amountStr,
       inline: false,
     },
     {
-      name: "📝 Motiv",
+      name: "Motiv",
       value: payload.reason,
       inline: false,
     },
