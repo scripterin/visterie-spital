@@ -98,7 +98,11 @@ export default function DashboardClient({ session }: { session: Session }) {
 
 const genereazaBilant = async () => {
   try {
-    const res = await fetch("/api/bilant", { method: "POST" });
+    const res = await fetch("/api/bilant", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ generatDe: displayName }),
+    });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
 
@@ -135,21 +139,6 @@ const genereazaBilant = async () => {
     link.click();
     URL.revokeObjectURL(link.href);
     setUltimaDataBilant(perioadaSfarsit);
-
-    // Trimite embed pe Discord
-    await fetch("/api/bilant/webhook", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        perioadaStart,
-        perioadaSfarsit,
-        totalVisterie: data.totalVisterie,
-        baniBagati: data.baniBagati,
-        baniScosi: data.baniScosi,
-        profit: data.profit,
-        generatDe: displayName,
-      }),
-    });
 
     toast.success("Bilant generat cu succes!");
   } catch (err: unknown) {

@@ -1,6 +1,4 @@
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 
 async function sendBilantWebhook({
@@ -30,22 +28,22 @@ async function sendBilantWebhook({
     color: isProfit ? 0x57f287 : 0xed4245,
     fields: [
       {
-        name: "Perioadă",
+        name: "📅 Perioadă",
         value: `${perioadaStart} → ${perioadaSfarsit}`,
         inline: false,
       },
       {
-        name: "Total Visterie",
+        name: "🏦 Total Visterie",
         value: `$${totalVisterie.toLocaleString("ro-RO")}`,
         inline: true,
       },
       {
-        name: "Bani Adăugați",
+        name: "💚 Bani Adăugați",
         value: `$${baniBagati.toLocaleString("ro-RO")}`,
         inline: true,
       },
       {
-        name: "Bani Scoși",
+        name: "❤️ Bani Scoși",
         value: `$${baniScosi.toLocaleString("ro-RO")}`,
         inline: true,
       },
@@ -77,8 +75,8 @@ const formatDate = (d: Date): string =>
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    const generatDe = session?.user?.username ?? session?.user?.name ?? "Necunoscut";
+    const body = await req.json().catch(() => ({}));
+    const generatDe: string = body.generatDe ?? "Necunoscut";
 
     const lastBilant = await prisma.bilant.findFirst({
       orderBy: { date: "desc" },
@@ -117,7 +115,6 @@ export async function POST(req: NextRequest) {
     const perioadaStart = lastDate ? formatDate(lastDate) : "început";
     const perioadaSfarsit = formatDate(currentDate);
 
-    // Fire-and-forget — nu blocăm răspunsul
     sendBilantWebhook({
       perioadaStart,
       perioadaSfarsit,
