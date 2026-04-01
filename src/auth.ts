@@ -5,27 +5,27 @@ import { prisma } from "@/lib/prisma";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
-  // 1. Forțăm strategia JWT pentru a putea controla cookie-ul mai ușor
   session: { 
     strategy: "jwt",
-    maxAge: 0, // Aceasta este cheia pentru "Session Cookie"
+    // Nu punem maxAge: 0 aici. Folosim setarile de cookies de mai jos.
+    maxAge: 24 * 60 * 60, // Sesiunea expira dupa 24h daca browserul ramane deschis
   },
   providers: [
     Discord({
       clientId: process.env.DISCORD_CLIENT_ID!,
       clientSecret: process.env.DISCORD_CLIENT_SECRET!,
-      // 2. Obligăm utilizatorul să dea click pe "Authorize" de fiecare dată
       authorization: { params: { prompt: "consent" } },
     }),
   ],
   callbacks: {
-    // 3. Adăugăm callback-ul JWT pentru a injecta datele din DB în token
-    async jwt({ token, user, trigger }) {
+    async jwt({ token, user }) {
+      // Cand utilizatorul se logheaza (user obiectul exista doar la login)
       if (user) {
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id },
           select: { discordId: true, callsign: true, rol: true, username: true, avatar: true },
         });
+        
         if (dbUser) {
           token.id = user.id;
           token.discordId = dbUser.discordId;
@@ -37,7 +37,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return token;
     },
-    // 4. Actualizăm session() să citească din token (nu din user, pt că e JWT)
     async session({ session, token }) {
       if (session.user && token) {
         session.user.id = token.id as string;
@@ -66,7 +65,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           where: { discordId },
         });
 
-        // Verificăm dacă există deja userul
         const existingUser = await prisma.user.findFirst({
           where: {
             accounts: {
@@ -94,6 +92,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return true;
     },
   },
+  // --- ACEASTA PARTE REZOLVA STERGEREA LA INCHIDEREA BROWSERULUI ---
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        // FARA maxAge aici = Session Cookie (se sterge cand inchizi browserul)
+      },
+    },
+  },
+  // ----------------------------------------------------------------
   pages: {
     signIn: "/",
   },
