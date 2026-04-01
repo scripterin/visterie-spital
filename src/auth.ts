@@ -49,7 +49,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           where: { discordId },
         });
 
-        // Găsește userul după discordId sau după contul Discord
         const existingUser = await prisma.user.findFirst({
           where: {
             accounts: {
@@ -75,6 +74,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
       }
       return true;
+    },
+  },
+  events: {
+    async createUser({ user }) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { email: null, emailVerified: null },
+      });
     },
   },
   pages: {
