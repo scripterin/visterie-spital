@@ -76,14 +76,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return true;
     },
   },
-  events: {
-    async createUser({ user }) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { email: null, emailVerified: null },
-      });
-    },
-  },
   pages: {
     signIn: "/",
   },
