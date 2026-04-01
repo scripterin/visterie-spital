@@ -118,7 +118,7 @@ export default function TransactionModal({ type, onClose, onSuccess }: Transacti
               <input
                 type="number"
                 step="0.01"
-                placeholder="0"
+                placeholder="Introdu suma"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 className="w-full bg-white/[0.03] border border-white/5 rounded-xl py-3.5 pl-9 pr-4 text-white placeholder:text-white/5 focus:outline-none focus:border-[#EA8232]/30 focus:bg-white/[0.06] transition-all font-mono text-lg"
@@ -129,12 +129,12 @@ export default function TransactionModal({ type, onClose, onSuccess }: Transacti
 
           {/* Callsign - M- Prefix */}
           <div className="space-y-2">
-            <label className="text-white/25 text-[10px] font-bold uppercase tracking-widest ml-1">Responsabil (Callsign)</label>
+            <label className="text-white/25 text-[10px] font-bold uppercase tracking-widest ml-1">Callsign</label>
             <div className="relative group">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#EA8232] font-black text-sm tracking-tighter">M-</span>
               <input
                 type="text"
-                placeholder="000"
+                placeholder="Introdu callsign-ul"
                 value={callsign}
                 onChange={(e) => {
                   const val = e.target.value.replace(/^M-/i, "");
@@ -149,7 +149,7 @@ export default function TransactionModal({ type, onClose, onSuccess }: Transacti
           <div className="space-y-2">
             <label className="text-white/25 text-[10px] font-bold uppercase tracking-widest ml-1">Detalii / Motiv</label>
             <textarea
-              placeholder="Ex: Achiziție pachete medicale..."
+              placeholder="Introdu motivul"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={2}
