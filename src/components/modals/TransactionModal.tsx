@@ -95,7 +95,7 @@ export default function TransactionModal({ type, onClose, onSuccess }: Transacti
             </div>
             <div>
               <h2 className="text-white font-semibold text-[17px] tracking-tight leading-none">{title}</h2>
-              <p className="text-white/20 text-[10px] uppercase tracking-[0.15em] font-bold mt-1.5">Visterie Internă</p>
+              <p className="text-white/20 text-[10px] uppercase tracking-[0.15em] font-bold mt-1.5">Visterie Spital</p>
             </div>
           </div>
           <button 
@@ -112,7 +112,7 @@ export default function TransactionModal({ type, onClose, onSuccess }: Transacti
           
           {/* Suma - Stil DM Mono */}
           <div className="space-y-2">
-            <label className="text-white/25 text-[10px] font-bold uppercase tracking-widest ml-1">Valoare Tranzacție</label>
+            <label className="text-white/25 text-[10px] font-bold uppercase tracking-widest ml-1">Sumă</label>
             <div className="relative group">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/10 font-mono text-xl transition-colors group-focus-within:text-[#EA8232]">$</span>
               <input
@@ -147,7 +147,7 @@ export default function TransactionModal({ type, onClose, onSuccess }: Transacti
 
           {/* Motiv */}
           <div className="space-y-2">
-            <label className="text-white/25 text-[10px] font-bold uppercase tracking-widest ml-1">Detalii / Motiv</label>
+            <label className="text-white/25 text-[10px] font-bold uppercase tracking-widest ml-1">Motiv</label>
             <textarea
               placeholder="Introdu motivul"
               value={reason}

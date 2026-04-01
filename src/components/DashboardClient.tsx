@@ -34,6 +34,8 @@ export default function DashboardClient({ session }: { session: Session }) {
   const [ultimaDataBilant, setUltimaDataBilant] = useState<string | null>(null);
 
   const isAdmin = session.user.rol === "admin";
+  const avatarUrl = session.user.avatar ?? session.user.image ?? undefined;
+  const displayName = session.user.username ?? session.user.name ?? "Utilizator";
 
   useEffect(() => {
     fetch("/api/bilant")
@@ -96,59 +98,56 @@ export default function DashboardClient({ session }: { session: Session }) {
     }
   }
 
-const genereazaBilant = async () => {
-  try {
-    const res = await fetch("/api/bilant", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ generatDe: displayName }),
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
+  const genereazaBilant = async () => {
+    try {
+      const res = await fetch("/api/bilant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ generatDe: displayName }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
 
-    const currentDate = new Date(data.currentDate);
-    const lastDate: Date | null = data.lastDate ? new Date(data.lastDate) : null;
-    const perioadaStart = lastDate ? formatDate(lastDate) : "început";
-    const perioadaSfarsit = formatDate(currentDate);
-    const lineSeparator = "=".repeat(50);
+      const currentDate = new Date(data.currentDate);
+      const lastDate: Date | null = data.lastDate ? new Date(data.lastDate) : null;
+      const perioadaStart = lastDate ? formatDate(lastDate) : "început";
+      const perioadaSfarsit = formatDate(currentDate);
+      const lineSeparator = "=".repeat(50);
 
-    const text = [
-      lineSeparator,
-      `  BILANT FINANCIAR`,
-      `  Perioada: ${perioadaStart} - ${perioadaSfarsit}`,
-      lineSeparator,
-      "",
-      `  Total visterie:     $${data.totalVisterie.toLocaleString("ro-RO")}`,
-      "",
-      `  Bani adaugati:      $${data.baniBagati.toLocaleString("ro-RO")}`,
-      `  Bani scosi:         $${data.baniScosi.toLocaleString("ro-RO")}`,
-      "",
-      data.profit >= 0
-        ? `  Profit perioada:    $${data.profit.toLocaleString("ro-RO")}`
-        : `  Pierdere perioada:  $${Math.abs(data.profit).toLocaleString("ro-RO")}`,
-      "",
-      lineSeparator,
-      `  Generat la: ${perioadaSfarsit}`,
-      lineSeparator,
-    ].join("\n");
+      const text = [
+        lineSeparator,
+        `  BILANT FINANCIAR`,
+        `  Perioada: ${perioadaStart} - ${perioadaSfarsit}`,
+        lineSeparator,
+        "",
+        `  Total visterie:     $${data.totalVisterie.toLocaleString("ro-RO")}`,
+        "",
+        `  Bani adaugati:      $${data.baniBagati.toLocaleString("ro-RO")}`,
+        `  Bani scosi:         $${data.baniScosi.toLocaleString("ro-RO")}`,
+        "",
+        data.profit >= 0
+          ? `  Profit perioada:    $${data.profit.toLocaleString("ro-RO")}`
+          : `  Pierdere perioada:  $${Math.abs(data.profit).toLocaleString("ro-RO")}`,
+        "",
+        lineSeparator,
+        `  Generat la: ${perioadaSfarsit}`,
+        lineSeparator,
+      ].join("\n");
 
-    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `bilant-${perioadaSfarsit.replace(/\./g, "-")}.txt`;
-    link.click();
-    URL.revokeObjectURL(link.href);
-    setUltimaDataBilant(perioadaSfarsit);
+      const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `bilant-${perioadaSfarsit.replace(/\./g, "-")}.txt`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      setUltimaDataBilant(perioadaSfarsit);
 
-    toast.success("Bilant generat cu succes!");
-  } catch (err: unknown) {
-    console.error("Eroare la generarea bilantului:", err);
-    toast.error("Eroare la generarea bilantului");
-  }
-};
-
-  const avatarUrl = session.user.avatar ?? session.user.image ?? undefined;
-  const displayName = session.user.username ?? session.user.name ?? "Utilizator";
+      toast.success("Bilant generat cu succes!");
+    } catch (err: unknown) {
+      console.error("Eroare la generarea bilantului:", err);
+      toast.error("Eroare la generarea bilantului");
+    }
+  };
 
   return (
     <>
