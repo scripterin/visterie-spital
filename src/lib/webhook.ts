@@ -8,6 +8,18 @@ interface WebhookPayload {
   discordId: string | null;
 }
 
+function getRomanianDateTime(): string {
+  return new Date().toLocaleString("ro-RO", {
+    timeZone: "Europe/Bucharest",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
 export async function sendDiscordWebhook(payload: WebhookPayload) {
   const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
   if (!webhookUrl) {
@@ -22,36 +34,36 @@ export async function sendDiscordWebhook(payload: WebhookPayload) {
   const amountStr = `$${payload.amount.toLocaleString("ro-RO")}`;
   const userTag = payload.discordId ? `<@${payload.discordId}>` : payload.username;
 
-const embed = {
-  title: `${statusIcon} ${typeTitle}`,
-  color,
-  fields: [
-    {
-      name: "Efectuat de",
-      value: userTag,
-      inline: false,
+  const embed = {
+    title: `${statusIcon} ${typeTitle}`,
+    color,
+    fields: [
+      {
+        name: "Efectuat de",
+        value: userTag,
+        inline: false,
+      },
+      {
+        name: "Callsign",
+        value: payload.callsign,
+        inline: false,
+      },
+      {
+        name: "Sumă",
+        value: amountStr,
+        inline: false,
+      },
+      {
+        name: "Motiv",
+        value: payload.reason,
+        inline: false,
+      },
+    ],
+    footer: {
+      text: `Visterie System • ${getRomanianDateTime()}`,
     },
-    {
-      name: "Callsign",
-      value: payload.callsign,
-      inline: false,
-    },
-    {
-      name: "Sumă",
-      value: amountStr,
-      inline: false,
-    },
-    {
-      name: "Motiv",
-      value: payload.reason,
-      inline: false,
-    },
-  ],
-  footer: {
-    text: `Visterie System • ${payload.date}`,
-  },
-  timestamp: new Date().toISOString(),
-};
+    timestamp: new Date().toISOString(),
+  };
 
   try {
     await fetch(webhookUrl, {
