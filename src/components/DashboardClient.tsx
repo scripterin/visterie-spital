@@ -88,10 +88,7 @@ export default function DashboardClient({ session }: { session: Session }) {
     try {
       const res = await fetch("/api/transactions", { method: "DELETE" });
       const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Eroare la stergere");
-        return;
-      }
+      if (!res.ok) { toast.error(data.error || "Eroare la stergere"); return; }
       toast.success("Istoricul a fost sters");
       setTransactions([]);
       setShowDeleteConfirm(false);
@@ -248,9 +245,10 @@ export default function DashboardClient({ session }: { session: Session }) {
           font-family: 'DM Mono', monospace;
           font-size: 40px; font-weight: 500; color: #fff;
           letter-spacing: -0.02em;
-          user-select: none;
+          filter: blur(12px); user-select: none;
           transition: filter 0.35s ease; cursor: default;
         }
+        .treasury-amount:hover { filter: blur(0px); }
 
         .action-grid {
           display: grid; grid-template-columns: 1fr 1fr;
@@ -448,12 +446,7 @@ export default function DashboardClient({ session }: { session: Session }) {
             {loadingTreasury ? (
               <div className="skeleton-pulse" style={{ height: 48, width: 240 }} />
             ) : (
-              <div 
-                className="treasury-amount"
-                style={{ filter: amountRevealed ? "blur(0px)" : "blur(6px)" }}
-                onMouseEnter={() => setAmountRevealed(true)}
-                onMouseLeave={() => setAmountRevealed(false)}
-              >
+              <div className="treasury-amount">
                 ${(treasury ?? 0).toLocaleString("ro-RO")}
               </div>
             )}
