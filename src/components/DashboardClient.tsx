@@ -98,7 +98,7 @@ export default function DashboardClient({ session }: { session: Session }) {
     }
   }
 
-const genereazaBilant = async () => {
+  const genereazaBilant = async () => {
     try {
       const res = await fetch("/api/bilant", {
         method: "POST",
@@ -136,7 +136,7 @@ const genereazaBilant = async () => {
           top: 20px;
           left: 20px;
           z-index: 50;
-          background: rgba(12,12,15,0.82);
+          background: rgba(12,12,15,0.88);
           border: 1px solid rgba(255,255,255,0.07);
           border-radius: 14px;
           padding: 12px 15px;
@@ -145,8 +145,9 @@ const genereazaBilant = async () => {
           gap: 12px;
           min-width: 215px;
           cursor: pointer;
-          backdrop-filter: blur(24px);
-          -webkit-backdrop-filter: blur(24px);
+          /* Păstrat blur mic — suprafață mică, cost acceptabil */
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
           transition: border-color 0.2s ease, transform 0.15s ease;
           overflow: hidden;
         }
@@ -219,13 +220,13 @@ const genereazaBilant = async () => {
 
         .treasury-card {
           flex-shrink: 0;
-          background: rgba(255,255,255,0.025);
+          /* backdrop-filter eliminat — suprafață mare, cost GPU ridicat pe Full HD */
+          background: rgba(255,255,255,0.035);
           border: 1px solid rgba(255,255,255,0.07);
           border-radius: 20px;
           padding: 26px 24px;
           display: flex; flex-direction: column; align-items: center; gap: 10px;
           position: relative; overflow: hidden;
-          backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
         }
         .treasury-card::before {
           content: '';
@@ -282,11 +283,11 @@ const genereazaBilant = async () => {
 
         .tx-panel {
           flex: 1; min-height: 0;
-          background: rgba(255,255,255,0.02);
+          /* backdrop-filter eliminat — suprafață mare + înălțime variabilă = cel mai costisitor element */
+          background: rgba(255,255,255,0.03);
           border: 1px solid rgba(255,255,255,0.06);
           border-radius: 20px;
           display: flex; flex-direction: column; overflow: hidden;
-          backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
         }
 
         .tx-header {

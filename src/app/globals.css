@@ -37,11 +37,11 @@ body {
 ::-webkit-scrollbar { display: none; }
 * { scrollbar-width: none; -ms-overflow-style: none; }
 
-/* tx-scroll — scroll fără bara vizibila */
 .tx-scroll { overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
 .tx-scroll::-webkit-scrollbar { display: none; }
 
 /* ── Background image + overlay ── */
+
 .bg-scene {
   position: fixed;
   inset: 0;
@@ -50,20 +50,25 @@ body {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  /* Overlay întunecator fără backdrop-filter */
+  filter: brightness(0.28);
 }
+
+/* Overlay negru separat — fără blur, doar opacitate */
 .bg-scene::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.72);
-  backdrop-filter: blur(2px);
+  background: rgba(0, 0, 0, 0.55);
+  /* backdrop-filter: blur(2px) — ELIMINAT */
 }
 
 /* ── Liquid Glass card ── */
+
 .glass {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: 20px;
   box-shadow:
@@ -81,10 +86,11 @@ body {
 }
 
 /* ── Glass modal ── */
+
 .glass-modal {
-  background: rgba(15, 15, 20, 0.75);
-  backdrop-filter: blur(40px) saturate(200%);
-  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  background: rgba(15, 15, 20, 0.82);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 24px;
   box-shadow:
@@ -93,10 +99,11 @@ body {
 }
 
 /* ── Backdrop ── */
+
 .modal-backdrop {
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 /* ── Buttons ── */
@@ -227,7 +234,6 @@ body {
   border-radius: 8px;
 }
 
-
 /* ── Stat card number ── */
 .stat-number {
   font-size: 2.2rem;
@@ -242,7 +248,7 @@ body {
   border-top: 1px solid rgba(255,255,255,0.06);
 }
 
-/* ── Noise texture overlay (optional subtlety) ── */
+/* ── Noise texture overlay ── */
 .noise::before {
   content: '';
   position: fixed;
@@ -253,13 +259,12 @@ body {
   z-index: 1;
 }
 
-/* Elimină săgețile de pe input number */
+/* ── Input number — elimină săgețile ── */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
-
 input[type="number"] {
   -moz-appearance: textfield;
 }
