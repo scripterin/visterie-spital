@@ -70,7 +70,7 @@ export default function TransactionModal({ type, onClose, onSuccess }: Transacti
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-[12px] bg-black/40 animate-fadeIn"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 animate-fadeIn"
       style={{ fontFamily: "'DM Sans', sans-serif" }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
