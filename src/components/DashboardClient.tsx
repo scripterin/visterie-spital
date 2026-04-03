@@ -145,7 +145,7 @@ export default function DashboardClient({ session }: { session: Session }) {
           gap: 12px;
           min-width: 215px;
           cursor: pointer;
-          backdrop-filter: blur(12px);
+          backdrop-filter: blur(6px);
           -webkit-backdrop-filter: blur(12px);
           transition: border-color 0.2s ease, transform 0.15s ease;
           overflow: hidden;
