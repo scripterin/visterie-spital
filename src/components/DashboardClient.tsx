@@ -136,7 +136,7 @@ export default function DashboardClient({ session }: { session: Session }) {
           top: 20px;
           left: 20px;
           z-index: 50;
-          background: rgba(12,12,15,0.88);
+          background: rgba(18, 18, 22, 0.90);
           border: 1px solid rgba(255,255,255,0.07);
           border-radius: 14px;
           padding: 12px 15px;
@@ -145,7 +145,6 @@ export default function DashboardClient({ session }: { session: Session }) {
           gap: 12px;
           min-width: 215px;
           cursor: pointer;
-          /* Păstrat blur mic — suprafață mică, cost acceptabil */
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
           transition: border-color 0.2s ease, transform 0.15s ease;
@@ -220,13 +219,13 @@ export default function DashboardClient({ session }: { session: Session }) {
 
         .treasury-card {
           flex-shrink: 0;
-          /* backdrop-filter eliminat — suprafață mare, cost GPU ridicat pe Full HD */
-          background: rgba(255,255,255,0.035);
-          border: 1px solid rgba(255,255,255,0.07);
+          background: rgba(22, 22, 28, 0.85);
+          border: 1px solid rgba(255,255,255,0.08);
           border-radius: 20px;
           padding: 26px 24px;
           display: flex; flex-direction: column; align-items: center; gap: 10px;
           position: relative; overflow: hidden;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.06) inset;
         }
         .treasury-card::before {
           content: '';
@@ -283,11 +282,11 @@ export default function DashboardClient({ session }: { session: Session }) {
 
         .tx-panel {
           flex: 1; min-height: 0;
-          /* backdrop-filter eliminat — suprafață mare + înălțime variabilă = cel mai costisitor element */
-          background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(255,255,255,0.06);
+          background: rgba(22, 22, 28, 0.82);
+          border: 1px solid rgba(255,255,255,0.07);
           border-radius: 20px;
           display: flex; flex-direction: column; overflow: hidden;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.05) inset;
         }
 
         .tx-header {
