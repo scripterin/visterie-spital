@@ -32,6 +32,7 @@ export default function DashboardClient({ session }: { session: Session }) {
   const [loadingTransactions, setLoadingTransactions] = useState(true);
   const [deletingHistory, setDeletingHistory] = useState(false);
   const [ultimaDataBilant, setUltimaDataBilant] = useState<string | null>(null);
+  const [amountRevealed, setAmountRevealed] = useState(false);
 
   const isAdmin = session.user.rol === "admin";
   const avatarUrl = session.user.avatar ?? session.user.image ?? undefined;
@@ -87,7 +88,10 @@ export default function DashboardClient({ session }: { session: Session }) {
     try {
       const res = await fetch("/api/transactions", { method: "DELETE" });
       const data = await res.json();
-      if (!res.ok) { toast.error(data.error || "Eroare la stergere"); return; }
+      if (!res.ok) {
+        toast.error(data.error || "Eroare la stergere");
+        return;
+      }
       toast.success("Istoricul a fost sters");
       setTransactions([]);
       setShowDeleteConfirm(false);
@@ -244,10 +248,9 @@ export default function DashboardClient({ session }: { session: Session }) {
           font-family: 'DM Mono', monospace;
           font-size: 40px; font-weight: 500; color: #fff;
           letter-spacing: -0.02em;
-          filter: blur(12px); user-select: none;
+          user-select: none;
           transition: filter 0.35s ease; cursor: default;
         }
-        .treasury-amount:hover { filter: blur(0px); }
 
         .action-grid {
           display: grid; grid-template-columns: 1fr 1fr;
@@ -445,7 +448,12 @@ export default function DashboardClient({ session }: { session: Session }) {
             {loadingTreasury ? (
               <div className="skeleton-pulse" style={{ height: 48, width: 240 }} />
             ) : (
-              <div className="treasury-amount">
+              <div 
+                className="treasury-amount"
+                style={{ filter: amountRevealed ? "blur(0px)" : "blur(6px)" }}
+                onMouseEnter={() => setAmountRevealed(true)}
+                onMouseLeave={() => setAmountRevealed(false)}
+              >
                 ${(treasury ?? 0).toLocaleString("ro-RO")}
               </div>
             )}
