@@ -32,7 +32,6 @@ export default function DashboardClient({ session }: { session: Session }) {
   const [loadingTransactions, setLoadingTransactions] = useState(true);
   const [deletingHistory, setDeletingHistory] = useState(false);
   const [ultimaDataBilant, setUltimaDataBilant] = useState<string | null>(null);
-  const [amountRevealed, setAmountRevealed] = useState(false);
 
   const isAdmin = session.user.rol === "admin";
   const avatarUrl = session.user.avatar ?? session.user.image ?? undefined;
@@ -241,14 +240,19 @@ export default function DashboardClient({ session }: { session: Session }) {
           text-transform: uppercase; color: rgba(255,255,255,0.28);
         }
 
+        .treasury-amount-wrapper {
+          display: flex; align-items: center; justify-content: center;
+          cursor: default;
+        }
         .treasury-amount {
           font-family: 'DM Mono', monospace;
           font-size: 40px; font-weight: 500; color: #fff;
           letter-spacing: -0.02em;
           filter: blur(12px); user-select: none;
           transition: filter 0.35s ease; cursor: default;
+          pointer-events: none;
         }
-        .treasury-amount:hover { filter: blur(0px); }
+        .treasury-amount-wrapper:hover .treasury-amount { filter: blur(0px); }
 
         .action-grid {
           display: grid; grid-template-columns: 1fr 1fr;
@@ -446,8 +450,10 @@ export default function DashboardClient({ session }: { session: Session }) {
             {loadingTreasury ? (
               <div className="skeleton-pulse" style={{ height: 48, width: 240 }} />
             ) : (
-              <div className="treasury-amount">
-                ${(treasury ?? 0).toLocaleString("ro-RO")}
+              <div className="treasury-amount-wrapper">
+                <div className="treasury-amount">
+                  ${(treasury ?? 0).toLocaleString("ro-RO")}
+                </div>
               </div>
             )}
           </div>
