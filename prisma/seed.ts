@@ -9,8 +9,8 @@ async function main() {
 
   const whitelistUsers = [
     { discordId: "702150314643554304", callsign: "M-001", rol: "admin", name: "Darrin Rodriguez" },
-    { discordId: "285446821533188101", callsign: "M-002", rol: "user", name: "Shades Antonio" },
-    { discordId: "838419996556001341", callsign: "M-003", rol: "user", name: "Alex Tudorescu" },
+    { discordId: "", callsign: "M-002", rol: "user", name: "N/A" },
+    { discordId: "", callsign: "M-003", rol: "user", name: "N/A" },
     { discordId: "", callsign: "M-004", rol: "user", name: "N/A" },
     { discordId: "", callsign: "M-005", rol: "user", name: "N/A" },
     { discordId: "377076232254390273", callsign: "M-006", rol: "user", name: "Neiconi Petrica" },
