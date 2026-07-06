@@ -10,16 +10,16 @@ async function main() {
   const whitelistUsers = [
     { discordId: "702150314643554304", callsign: "M-001", rol: "admin", name: "Darrin Rodriguez" },
     { discordId: "285446821533188101", callsign: "M-002", rol: "user", name: "Antonio Shades" },
-    { discordId: "", callsign: "M-003", rol: "user", name: "N/A" },
+    { discordId: "793944399913680916", callsign: "M-003", rol: "user", name: "Marius Mark" },
     { discordId: "", callsign: "M-004", rol: "user", name: "N/A" },
     { discordId: "", callsign: "M-005", rol: "user", name: "N/A" },
     { discordId: "377076232254390273", callsign: "M-006", rol: "user", name: "Neiconi Petrica" },
     { discordId: "556128906357374996", callsign: "M-007", rol: "user", name: "Mihail Parvu" },
-    { discordId: "793944399913680916", callsign: "M-008", rol: "user", name: "Marius Mark" },
-    { discordId: "", callsign: "M-009", rol: "user", name: "N/A" },
+    { discordId: "", callsign: "M-008", rol: "user", name: "N/A" },
+    { discordId: "428576202920558602", callsign: "M-009", rol: "user", name: "Vlad Samson" },
     { discordId: "1142522913510146129", callsign: "M-010", rol: "user", name: "Paduraru David" },
     { discordId: "773586551325458473", callsign: "M-011", rol: "user", name: "Erwin Moretti" },
-    { discordId: "", callsign: "M-012", rol: "user", name: "N/A" },
+    { discordId: "382120953188057098", callsign: "M-012", rol: "user", name: "Olteanu Mario" },
 
   ];
 
