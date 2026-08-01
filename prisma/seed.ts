@@ -13,7 +13,7 @@ async function main() {
     { discordId: "793944399913680916", callsign: "M-003", rol: "user", name: "Marius Mark" },
     { discordId: "", callsign: "M-004", rol: "user", name: "N/A" },
     { discordId: "", callsign: "M-005", rol: "user", name: "N/A" },
-    { discordId: "377076232254390273", callsign: "M-006", rol: "user", name: "Neiconi Petrica" },
+    { discordId: "", callsign: "M-006", rol: "user", name: "N/A" },
     { discordId: "556128906357374996", callsign: "M-007", rol: "user", name: "Mihail Parvu" },
     { discordId: "", callsign: "M-008", rol: "user", name: "N/A" },
     { discordId: "428576202920558602", callsign: "M-009", rol: "user", name: "Vlad Samson" },
